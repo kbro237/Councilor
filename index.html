@@ -176,6 +176,37 @@ button.icon-only {
   box-shadow: 0 0 0 2px var(--accent-light);
 }
 
+.cycle-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.cycle-info input[type="number"] {
+  width: 56px;
+  padding: 3px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 0.72rem;
+  text-align: center;
+  font-family: inherit;
+}
+
+.cycle-info input[type="number"]:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-light);
+}
+
+.cycle-cohorts {
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+
 /* Empty state */
 .empty-state {
   text-align: center;
@@ -567,6 +598,7 @@ button.icon-only {
   </header>
 
   <div id="year-bar"></div>
+  <div id="cycle-bar"></div>
   <div id="main-content"></div>
 
   <div class="card" style="margin-top:16px">
@@ -596,7 +628,7 @@ const TOTAL_SEATS = 9;
 // STATE
 // ============================================================
 
-let appData = { version: 1, people: [], roster: {} };
+let appData = { version: 1, cycleStart: null, people: [], roster: {} };
 let currentYear = null;
 let editingSeat = null; // { position: 0-8 } or null
 let editingPersonId = null; // person id being renamed inline
@@ -612,6 +644,8 @@ function loadData() {
       const parsed = JSON.parse(raw);
       if (parsed.version === 1) {
         appData = parsed;
+        // Migration: ensure cycleStart exists
+        if (appData.cycleStart === undefined) appData.cycleStart = null;
         // Ensure all roster years have officers block
         for (const [y, r] of Object.entries(appData.roster)) {
           if (!r.officers) r.officers = { president: null, vicePresident: null, secretary: null, treasurer: null };
@@ -720,6 +754,21 @@ function formatYearLong(year) {
   return 'Jun ' + year + ' \u2013 May ' + (year + 1);
 }
 
+function getCycleStart() {
+  if (appData.cycleStart && appData.cycleStart > 0) {
+    return appData.cycleStart;
+  }
+  var years = getYears();
+  return years.length > 0 ? years[0] : new Date().getFullYear();
+}
+
+function getTermYear(year, position) {
+  var cycleStart = getCycleStart();
+  var cohortOffset = Math.floor(position / 3);
+  var baseYear = cycleStart + cohortOffset;
+  return ((year - baseYear) % 3 + 3) % 3 + 1;
+}
+
 // ============================================================
 // COMPUTATIONS
 // ============================================================
@@ -751,13 +800,15 @@ function getSeatStatus(year, position) {
 }
 
 function getSeatLabel(year, position) {
-  const years = getSeatYears(year, position);
-  if (years === 0) return '';
-  const term = Math.ceil(years / 3);
-  const yrInTerm = ((years - 1) % 3) + 1;
-  if (term === 1) return 'Year ' + yrInTerm + ' of 3';
-  if (term === 2) return '2nd term, Yr ' + yrInTerm;
-  return 'Term ' + term + ', Yr ' + yrInTerm;
+  var personId = appData.roster[year]?.members[position];
+  if (!personId) return '';
+  var personYears = getSeatYears(year, position);
+  var termYear = getTermYear(year, position);
+
+  if (personYears >= 7) return 'Term 3, Yr ' + termYear + '/3';
+  if (personYears >= 4) return 'Term 2, Yr ' + termYear + '/3';
+  if (personYears < termYear) return 'Filling \u00b7 Yr ' + termYear + '/3';
+  return 'Yr ' + termYear + '/3';
 }
 
 function getServiceSummary() {
@@ -839,6 +890,18 @@ function goToYear(year) {
   editingSeat = null;
   editingPersonId = null;
   currentYear = year;
+  render();
+}
+
+function changeCycleStart(newCycleStart) {
+  var y = parseInt(newCycleStart, 10);
+  if (isNaN(y) || y < 2000 || y > 2100) {
+    toast('Enter a valid year (2000–2100).', true);
+    render();
+    return;
+  }
+  appData.cycleStart = y;
+  saveData();
   render();
 }
 
@@ -983,8 +1046,23 @@ function deletePerson(id) {
 
 function render() {
   renderYearBar();
+  renderCycleBar();
   renderMainContent();
   renderPeopleList();
+}
+
+function renderCycleBar() {
+  var bar = document.getElementById('cycle-bar');
+  var years = getYears();
+  if (years.length === 0) { bar.innerHTML = ''; return; }
+
+  var cycleStart = getCycleStart();
+  var html = '<div class="cycle-info">';
+  html += 'Term cycle anchored: <input type="number" id="cycle-start-input" value="' + cycleStart + '" min="2000" max="2100"';
+  html += ' onchange="changeCycleStart(this.value)" title="Year seats 1-3 start a new term">';
+  html += '<span class="cycle-cohorts">(Seats 1\u20133: ' + cycleStart + ', 4\u20136: ' + (cycleStart + 1) + ', 7\u20139: ' + (cycleStart + 2) + ')</span>';
+  html += '</div>';
+  bar.innerHTML = html;
 }
 
 function renderYearBar() {
