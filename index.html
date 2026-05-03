@@ -842,56 +842,43 @@ function goToYear(year) {
   render();
 }
 
-function createYear() {
-  const years = getYears();
-  let nextYear = new Date().getFullYear();
-
-  // If we have existing years, default to next consecutive year
-  if (years.length > 0) {
-    nextYear = years[years.length - 1] + 1;
-  }
-
-  // If the next year already exists, find the next gap
-  while (appData.roster[nextYear]) {
-    nextYear++;
-  }
-
-  // Create with auto-rollover from most recent prior year
-  const members = new Array(TOTAL_SEATS).fill(null);
-  if (years.length > 0) {
-    const latestYear = years[years.length - 1];
-    const latestMembers = appData.roster[latestYear].members;
-    for (let i = 0; i < TOTAL_SEATS; i++) {
-      members[i] = latestMembers[i] || null;
-    }
-  }
-
-  appData.roster[nextYear] = {
-    members,
-    officers: { president: null, vicePresident: null, secretary: null, treasurer: null },
-  };
-
-  currentYear = nextYear;
-  saveData();
-  render();
-  toast('Created council year ' + formatYear(nextYear) + '. Members auto-rolled from previous year.');
-}
-
-function createStartingYear() {
-  const input = document.getElementById('start-year-input');
-  let year = parseInt(input.value, 10);
-  if (isNaN(year) || year < 2000 || year > 2100) {
+function createYear(targetYear) {
+  if (isNaN(targetYear) || targetYear < 2000 || targetYear > 2100) {
     toast('Enter a valid year (2000–2100).', true);
     return;
   }
-  appData.roster[year] = {
-    members: new Array(TOTAL_SEATS).fill(null),
+  if (appData.roster[targetYear]) {
+    toast(formatYear(targetYear) + ' already exists.', true);
+    return;
+  }
+
+  const years = getYears();
+  const priorYears = years.filter(function(y) { return y < targetYear; });
+  const members = new Array(TOTAL_SEATS).fill(null);
+
+  if (priorYears.length > 0) {
+    // Auto-roll from closest prior year
+    const closestPrior = priorYears[priorYears.length - 1];
+    const priorMembers = appData.roster[closestPrior].members;
+    for (var i = 0; i < TOTAL_SEATS; i++) {
+      members[i] = priorMembers[i] || null;
+    }
+  }
+
+  appData.roster[targetYear] = {
+    members: members,
     officers: { president: null, vicePresident: null, secretary: null, treasurer: null },
   };
-  currentYear = year;
+
+  currentYear = targetYear;
   saveData();
   render();
-  toast('Created starting year ' + formatYear(year) + '. Click seats to assign members.');
+
+  if (priorYears.length > 0) {
+    toast('Created ' + formatYear(targetYear) + '. Members auto-rolled from ' + formatYear(priorYears[priorYears.length - 1]) + '.');
+  } else {
+    toast('Created ' + formatYear(targetYear) + '. Click seats to assign members.');
+  }
 }
 
 function deleteYear() {
@@ -1019,8 +1006,14 @@ function renderYearBar() {
     html += '<button disabled style="opacity:0.4">&rarr;</button>';
   }
 
-  // New year button
-  html += '<button class="primary" onclick="createYear()" title="Add next council year">+ New Year</button>';
+  // New year input + button
+  var defaultYear = years[years.length - 1] + 1;
+  while (appData.roster[defaultYear]) defaultYear++;
+  html += '<div class="year-input-group">';
+  html += '<input type="number" id="new-year-input" value="' + defaultYear + '" min="2000" max="2100"';
+  html += ' onkeydown="if(event.key===\'Enter\')createYear(parseInt(this.value))" title="Year to create">';
+  html += '<button class="primary" onclick="var inp=document.getElementById(\'new-year-input\');createYear(parseInt(inp.value))" title="Create council year">Create</button>';
+  html += '</div>';
 
   // Delete year button
   html += '<button class="danger small" onclick="deleteYear()" title="Delete this year">Delete</button>';
@@ -1042,7 +1035,7 @@ function renderMainContent() {
             <label for="start-year-input">Starting year (term begins June):</label>
             <input type="number" id="start-year-input" value="${new Date().getFullYear()}" min="2000" max="2100">
           </div>
-          <button class="primary" onclick="createStartingYear()">Create First Year</button>
+          <button class="primary" onclick="createYear(parseInt(document.getElementById('start-year-input').value))">Create First Year</button>
         </div>`;
     } else {
       main.innerHTML = '<div class="empty-state"><p>Select a year to view the roster.</p></div>';
