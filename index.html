@@ -1220,8 +1220,9 @@ function renderMainContent() {
     html += '<tbody>';
 
     for (const s of summary) {
-      const statusClass = getStatusClass(s.currentStreak);
-      const statusLabel = getStatusLabel(s.currentStreak);
+      const statusConsecutive = s.currentStreak > 0 ? s.currentStreak : s.maxStreak;
+      const statusClass = getStatusClass(statusConsecutive);
+      const statusLabel = getStatusLabel(statusConsecutive);
       html += '<tr>';
       html += '<td>' + escapeHtml(s.name) + '</td>';
       html += '<td>' + s.totalYears + '</td>';
