@@ -901,6 +901,20 @@ function setSeatMember(position, personId) {
   if (currentYear === null) return;
   if (!appData.roster[currentYear]) return;
   appData.roster[currentYear].members[position] = personId || null;
+
+  // If adding a person, propagate forward to fill the remaining 2 years of the term
+  if (personId) {
+    for (var offset = 1; offset <= 2; offset++) {
+      var nextYear = currentYear + offset;
+      if (appData.roster[nextYear]) {
+        var existing = appData.roster[nextYear].members[position];
+        if (existing === null || existing === undefined) {
+          appData.roster[nextYear].members[position] = personId;
+        }
+      }
+    }
+  }
+
   editingSeat = null;
   saveData();
   render();
