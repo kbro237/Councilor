@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Councilor — Church Council Roster</title>
+<style>
+:root {
+  --bg: #f7fafc;
+  --card: #ffffff;
+  --border: #e2e8f0;
+  --text: #2d3748;
+  --muted: #718096;
+  --primary: #1a365d;
+  --accent: #2b6cb0;
+  --accent-light: #ebf4ff;
+  --danger: #e53e3e;
+  --danger-bg: #fff5f5;
+  --green: #38a169;
+  --green-bg: #f0fff4;
+  --yellow: #d69e2e;
+  --yellow-bg: #fffff0;
+  --orange: #dd6b20;
+  --orange-bg: #fffaf0;
+  --radius: 8px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+#app {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 24px 20px 60px;
+}
+
+/* Header */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: -0.02em;
+}
+
+header .subtitle {
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.header-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Buttons */
+button, .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+button:hover, .btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e0;
+}
+
+button:active, .btn:active {
+  transform: scale(0.98);
+}
+
+button.primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+button.primary:hover {
+  background: #255d8a;
+}
+
+button.danger {
+  background: var(--danger);
+  color: #fff;
+  border-color: var(--danger);
+}
+
+button.danger:hover {
+  background: #c53030;
+}
+
+button.small {
+  padding: 4px 10px;
+  font-size: 0.72rem;
+}
+
+button.icon-only {
+  padding: 5px 8px;
+  line-height: 1;
+}
+
+/* Year Bar */
+#year-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+#year-bar .year-display {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--primary);
+  min-width: 120px;
+  text-align: center;
+}
+
+#year-bar .year-term {
+  font-size: 0.72rem;
+  color: var(--muted);
+  display: block;
+  font-weight: 400;
+}
+
+#year-bar .year-input-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#year-bar input[type="number"] {
+  width: 72px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  text-align: center;
+  font-family: inherit;
+}
+
+#year-bar input[type="number"]:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-light);
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--muted);
+}
+
+.empty-state h2 {
+  font-size: 1.1rem;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.empty-state p {
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+}
+
+.empty-state .empty-year-hint {
+  margin-bottom: 20px;
+}
+
+.empty-state .empty-year-hint label {
+  font-size: 0.85rem;
+  margin-right: 8px;
+}
+
+.empty-state .empty-year-hint input {
+  width: 72px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  text-align: center;
+  font-family: inherit;
+}
+
+/* Card */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.card-header h2 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+/* Roster Grid */
+#roster-grid-wrap {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.seat-cell {
+  position: relative;
+  background: var(--bg);
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 16px 12px 14px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.seat-cell:hover {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+
+.seat-cell.filled {
+  border-style: solid;
+}
+
+.seat-cell .seat-number {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.seat-cell .seat-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.seat-cell .seat-name.vacant {
+  color: var(--muted);
+  font-weight: 400;
+  font-style: italic;
+}
+
+.seat-cell .seat-tenure {
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.seat-cell.editing {
+  border-color: var(--accent);
+  background: var(--accent-light);
+  box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+.seat-cell select {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  background: var(--card);
+  cursor: pointer;
+}
+
+.seat-cell select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* Status colors for seat cells */
+.seat-cell.status-active { border-left: 4px solid var(--green); }
+.seat-cell.status-warning { border-left: 4px solid var(--yellow); }
+.seat-cell.status-limit { border-left: 4px solid var(--orange); }
+.seat-cell.status-overlimit { border-left: 4px solid var(--danger); }
+
+/* Officers */
+#officers-display {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.officer-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px;
+  text-align: center;
+}
+
+.officer-card .officer-title {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.officer-card .officer-name {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.officer-card .officer-name.none {
+  color: var(--muted);
+  font-weight: 400;
+  font-style: italic;
+}
+
+/* Service Summary */
+#service-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+#service-table th {
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 2px solid var(--border);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+#service-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+#service-table tr:hover td {
+  background: var(--accent-light);
+}
+
+.service-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.service-badge.active { background: var(--green-bg); color: var(--green); }
+.service-badge.warning { background: var(--yellow-bg); color: #b7791f; }
+.service-badge.limit { background: var(--orange-bg); color: #c05621; }
+.service-badge.overlimit { background: var(--danger-bg); color: var(--danger); }
+
+/* People Manager */
+#people-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.person-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  transition: background 0.1s ease;
+}
+
+.person-row:hover {
+  background: var(--accent-light);
+}
+
+.person-row .person-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.person-row .person-name {
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.person-row .person-yrs {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.person-row .person-actions {
+  display: flex;
+  gap: 6px;
+}
+
+#add-person-form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+#add-person-form input[type="text"] {
+  flex: 1;
+  min-width: 160px;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-family: inherit;
+}
+
+#add-person-form input[type="text"]:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-light);
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal-box {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 24px;
+  min-width: 300px;
+  max-width: 90vw;
+  box-shadow: var(--shadow-md);
+}
+
+.modal-box h3 {
+  font-size: 1rem;
+  margin-bottom: 12px;
+}
+
+.modal-box .modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+/* Inline edit */
+.inline-edit-input {
+  width: 100%;
+  padding: 4px 8px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  outline: none;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--primary);
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  box-shadow: var(--shadow-md);
+  z-index: 200;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.2s ease;
+  pointer-events: none;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast.error {
+  background: var(--danger);
+}
+
+/* Hidden file input */
+#import-file {
+  display: none;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  #app { padding: 16px 12px 40px; }
+  #roster-grid-wrap { gap: 6px; }
+  .seat-cell { padding: 12px 8px 10px; min-height: 64px; }
+  .seat-cell .seat-name { font-size: 0.82rem; }
+  #officers-display { grid-template-columns: repeat(2, 1fr); }
+  header h1 { font-size: 1.25rem; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div>
+      <h1>Councilor</h1>
+      <div class="subtitle">Church Council Roster Manager</div>
+    </div>
+    <div class="header-buttons">
+      <button onclick="exportData()" title="Download backup">Export JSON</button>
+      <button onclick="document.getElementById('import-file').click()" title="Restore from backup">Import JSON</button>
+    </div>
+  </header>
+
+  <div id="year-bar"></div>
+  <div id="main-content"></div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="card-header">
+      <h2>People Database</h2>
+    </div>
+    <div id="add-person-form">
+      <input type="text" id="new-person-name" placeholder="Full name..." maxlength="80">
+      <button class="primary" onclick="addPerson()">Add Person</button>
+    </div>
+    <div id="people-list"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+<input type="file" id="import-file" accept=".json" onchange="importData(event)">
+
+<script>
+// ============================================================
+// Councilor — Church Council Roster Manager
+// ============================================================
+
+const STORAGE_KEY = 'councilor_data';
+const TOTAL_SEATS = 9;
+
+// ============================================================
+// STATE
+// ============================================================
+
+let appData = { version: 1, people: [], roster: {} };
+let currentYear = null;
+let editingSeat = null; // { position: 0-8 } or null
+let editingPersonId = null; // person id being renamed inline
+
+// ============================================================
+// PERSISTENCE
+// ============================================================
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed.version === 1) {
+        appData = parsed;
+        // Ensure all roster years have officers block
+        for (const [y, r] of Object.entries(appData.roster)) {
+          if (!r.officers) r.officers = { president: null, vicePresident: null, secretary: null, treasurer: null };
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Failed to load data:', e);
+  }
+}
+
+function saveData() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+  } catch (e) {
+    toast('Could not save to localStorage. Export your data!', true);
+  }
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(appData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'councilor-backup.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Data exported.');
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      if (!parsed.people || !parsed.roster) {
+        throw new Error('Invalid data format');
+      }
+      if (!confirm('This will replace all current data. Continue?')) return;
+      appData = parsed;
+      // Ensure officers blocks
+      for (const [y, r] of Object.entries(appData.roster)) {
+        if (!r.officers) r.officers = { president: null, vicePresident: null, secretary: null, treasurer: null };
+      }
+      const years = getYears();
+      if (years.length > 0 && (!currentYear || !appData.roster[currentYear])) {
+        currentYear = years[years.length - 1];
+      }
+      editingSeat = null;
+      editingPersonId = null;
+      saveData();
+      render();
+      toast('Data imported successfully.');
+    } catch (err) {
+      toast('Invalid import file.', true);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+
+let toastTimer = null;
+function toast(msg, isError) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast' + (isError ? ' error' : '') + ' show';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.className = 'toast'; }, 2500);
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+
+function generateId() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return 'id_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11);
+}
+
+function getYears() {
+  return Object.keys(appData.roster).map(Number).sort((a, b) => a - b);
+}
+
+function getPerson(id) {
+  return appData.people.find(p => p.id === id);
+}
+
+function getPersonName(id) {
+  const p = getPerson(id);
+  return p ? p.name : 'Unknown';
+}
+
+function formatYear(year) {
+  return year + '\u2013' + (year + 1);
+}
+
+function formatYearLong(year) {
+  return 'Jun ' + year + ' \u2013 May ' + (year + 1);
+}
+
+// ============================================================
+// COMPUTATIONS
+// ============================================================
+
+function getSeatYears(year, position) {
+  // How many consecutive years the same person has been in this seat position (going backward)
+  const roster = appData.roster[year];
+  if (!roster) return 0;
+  const personId = roster.members[position];
+  if (!personId) return 0;
+
+  let count = 1;
+  let y = year - 1;
+  while (appData.roster[y] && appData.roster[y].members[position] === personId) {
+    count++;
+    y--;
+  }
+  return count;
+}
+
+function getSeatStatus(year, position) {
+  const personId = appData.roster[year]?.members[position];
+  if (!personId) return 'vacant';
+  const years = getSeatYears(year, position);
+  if (years >= 7) return 'overlimit';
+  if (years >= 6) return 'limit';
+  if (years >= 4) return 'warning';
+  return 'active';
+}
+
+function getSeatLabel(year, position) {
+  const years = getSeatYears(year, position);
+  if (years === 0) return '';
+  const term = Math.ceil(years / 3);
+  const yrInTerm = ((years - 1) % 3) + 1;
+  if (term === 1) return 'Year ' + yrInTerm + ' of 3';
+  if (term === 2) return '2nd term, Yr ' + yrInTerm;
+  return 'Term ' + term + ', Yr ' + yrInTerm;
+}
+
+function getServiceSummary() {
+  const yearsArr = getYears();
+  if (yearsArr.length === 0) return [];
+
+  const personYears = {};
+  for (const year of yearsArr) {
+    const members = appData.roster[year].members || [];
+    for (const personId of members) {
+      if (!personId) continue;
+      if (!personYears[personId]) personYears[personId] = [];
+      personYears[personId].push(year);
+    }
+  }
+
+  const latestYear = yearsArr[yearsArr.length - 1];
+  const result = [];
+
+  for (const [personId, years] of Object.entries(personYears)) {
+    years.sort((a, b) => a - b);
+    const person = getPerson(personId);
+
+    // Max consecutive streak
+    let maxStreak = 0;
+    let cur = 0;
+    for (let i = 0; i < years.length; i++) {
+      if (i === 0 || years[i] === years[i - 1] + 1) {
+        cur++;
+      } else {
+        cur = 1;
+      }
+      maxStreak = Math.max(maxStreak, cur);
+    }
+
+    // Current streak (consecutive up to latestYear)
+    let curStreak = 0;
+    if (years[years.length - 1] === latestYear) {
+      curStreak = 1;
+      for (let i = years.length - 2; i >= 0; i--) {
+        if (years[i] === years[i + 1] - 1) curStreak++;
+        else break;
+      }
+    }
+
+    result.push({
+      id: personId,
+      name: person ? person.name : 'Unknown',
+      totalYears: years.length,
+      currentStreak: curStreak,
+      maxStreak,
+    });
+  }
+
+  result.sort((a, b) => a.name.localeCompare(b.name));
+  return result;
+}
+
+function getStatusClass(consecutive) {
+  if (consecutive >= 7) return 'overlimit';
+  if (consecutive >= 6) return 'limit';
+  if (consecutive >= 4) return 'warning';
+  return 'active';
+}
+
+function getStatusLabel(consecutive) {
+  if (consecutive >= 7) return 'Over limit';
+  if (consecutive >= 6) return 'Term limit';
+  if (consecutive >= 4) return '2nd term';
+  return 'Active';
+}
+
+// ============================================================
+// ACTIONS
+// ============================================================
+
+function goToYear(year) {
+  if (!appData.roster[year]) return;
+  editingSeat = null;
+  editingPersonId = null;
+  currentYear = year;
+  render();
+}
+
+function createYear() {
+  const years = getYears();
+  let nextYear = new Date().getFullYear();
+
+  // If we have existing years, default to next consecutive year
+  if (years.length > 0) {
+    nextYear = years[years.length - 1] + 1;
+  }
+
+  // If the next year already exists, find the next gap
+  while (appData.roster[nextYear]) {
+    nextYear++;
+  }
+
+  // Create with auto-rollover from most recent prior year
+  const members = new Array(TOTAL_SEATS).fill(null);
+  if (years.length > 0) {
+    const latestYear = years[years.length - 1];
+    const latestMembers = appData.roster[latestYear].members;
+    for (let i = 0; i < TOTAL_SEATS; i++) {
+      members[i] = latestMembers[i] || null;
+    }
+  }
+
+  appData.roster[nextYear] = {
+    members,
+    officers: { president: null, vicePresident: null, secretary: null, treasurer: null },
+  };
+
+  currentYear = nextYear;
+  saveData();
+  render();
+  toast('Created council year ' + formatYear(nextYear) + '. Members auto-rolled from previous year.');
+}
+
+function createStartingYear() {
+  const input = document.getElementById('start-year-input');
+  let year = parseInt(input.value, 10);
+  if (isNaN(year) || year < 2000 || year > 2100) {
+    toast('Enter a valid year (2000–2100).', true);
+    return;
+  }
+  appData.roster[year] = {
+    members: new Array(TOTAL_SEATS).fill(null),
+    officers: { president: null, vicePresident: null, secretary: null, treasurer: null },
+  };
+  currentYear = year;
+  saveData();
+  render();
+  toast('Created starting year ' + formatYear(year) + '. Click seats to assign members.');
+}
+
+function deleteYear() {
+  if (!currentYear) return;
+  if (!confirm('Delete the roster for ' + formatYear(currentYear) + '? This cannot be undone.')) return;
+  delete appData.roster[currentYear];
+  const years = getYears();
+  if (years.length > 0) {
+    currentYear = years[years.length - 1];
+  } else {
+    currentYear = null;
+  }
+  editingSeat = null;
+  editingPersonId = null;
+  saveData();
+  render();
+}
+
+function setSeatMember(position, personId) {
+  if (currentYear === null) return;
+  if (!appData.roster[currentYear]) return;
+  appData.roster[currentYear].members[position] = personId || null;
+  editingSeat = null;
+  saveData();
+  render();
+}
+
+function addPerson() {
+  const nameInput = document.getElementById('new-person-name');
+  const name = nameInput.value.trim();
+  if (!name) { toast('Enter a name.', true); return; }
+  appData.people.push({
+    id: generateId(),
+    name,
+  });
+  nameInput.value = '';
+  saveData();
+  render();
+  toast('Added ' + name + '.');
+}
+
+function renamePerson(id, newName) {
+  const person = getPerson(id);
+  if (!person) return;
+  const trimmed = newName.trim();
+  if (!trimmed) return;
+  person.name = trimmed;
+  editingPersonId = null;
+  saveData();
+  render();
+}
+
+function deletePerson(id) {
+  const person = getPerson(id);
+  if (!person) return;
+
+  // Check if this person is in any roster
+  let inUse = false;
+  for (const [year, roster] of Object.entries(appData.roster)) {
+    if (roster.members.includes(id)) {
+      inUse = true;
+      break;
+    }
+  }
+
+  if (inUse) {
+    if (!confirm(person.name + ' appears in council rosters. Remove them from all rosters and delete?')) return;
+    for (const [year, roster] of Object.entries(appData.roster)) {
+      roster.members = roster.members.map(mid => mid === id ? null : mid);
+      for (const [office, oid] of Object.entries(roster.officers)) {
+        if (oid === id) roster.officers[office] = null;
+      }
+    }
+  } else {
+    if (!confirm('Delete ' + person.name + ' from the database?')) return;
+  }
+
+  appData.people = appData.people.filter(p => p.id !== id);
+  if (editingPersonId === id) editingPersonId = null;
+  saveData();
+  render();
+  toast('Removed ' + person.name + '.');
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+
+function render() {
+  renderYearBar();
+  renderMainContent();
+  renderPeopleList();
+}
+
+function renderYearBar() {
+  const bar = document.getElementById('year-bar');
+  const years = getYears();
+
+  if (years.length === 0) {
+    bar.innerHTML = '';
+    return;
+  }
+
+  const idx = currentYear !== null ? years.indexOf(currentYear) : -1;
+  const yearDisplay = currentYear !== null ? formatYear(currentYear) : 'Select Year';
+
+  let html = '';
+
+  // Previous year button
+  if (idx > 0) {
+    html += '<button onclick="goToYear(' + years[idx - 1] + ')" title="Previous year">&larr;</button>';
+  } else {
+    html += '<button disabled style="opacity:0.4">&larr;</button>';
+  }
+
+  // Year display / dropdown
+  html += '<div class="year-display">' + yearDisplay;
+  html += '<span class="year-term">' + (currentYear !== null ? formatYearLong(currentYear) : '') + '</span>';
+  html += '</div>';
+
+  // Next year button
+  if (idx >= 0 && idx < years.length - 1) {
+    html += '<button onclick="goToYear(' + years[idx + 1] + ')" title="Next year">&rarr;</button>';
+  } else {
+    html += '<button disabled style="opacity:0.4">&rarr;</button>';
+  }
+
+  // New year button
+  html += '<button class="primary" onclick="createYear()" title="Add next council year">+ New Year</button>';
+
+  // Delete year button
+  html += '<button class="danger small" onclick="deleteYear()" title="Delete this year">Delete</button>';
+
+  bar.innerHTML = html;
+}
+
+function renderMainContent() {
+  const main = document.getElementById('main-content');
+
+  if (currentYear === null) {
+    const years = getYears();
+    if (years.length === 0) {
+      main.innerHTML = `
+        <div class="empty-state">
+          <h2>Welcome to Councilor</h2>
+          <p>Track your church council roster across years. Members serve 3-year terms with a 2-term limit.</p>
+          <div class="empty-year-hint">
+            <label for="start-year-input">Starting year (term begins June):</label>
+            <input type="number" id="start-year-input" value="${new Date().getFullYear()}" min="2000" max="2100">
+          </div>
+          <button class="primary" onclick="createStartingYear()">Create First Year</button>
+        </div>`;
+    } else {
+      main.innerHTML = '<div class="empty-state"><p>Select a year to view the roster.</p></div>';
+    }
+    return;
+  }
+
+  const roster = appData.roster[currentYear];
+  if (!roster) {
+    main.innerHTML = '<div class="empty-state"><p>No data for this year.</p></div>';
+    return;
+  }
+
+  let html = '';
+
+  // Roster grid
+  html += '<div class="card">';
+  html += '<div class="card-header"><h2>Council Roster &mdash; ' + formatYear(currentYear) + '</h2></div>';
+  html += '<div id="roster-grid-wrap">';
+
+  for (let i = 0; i < TOTAL_SEATS; i++) {
+    const personId = roster.members[i];
+    const isEditing = editingSeat !== null && editingSeat.position === i;
+    const status = getSeatStatus(currentYear, i);
+
+    html += '<div class="seat-cell';
+    if (personId) html += ' filled status-' + status;
+    if (isEditing) html += ' editing';
+    html += '" onclick="';
+    if (!isEditing) {
+      html += 'event.stopPropagation(); startEditingSeat(' + i + ')';
+    }
+    html += '">';
+
+    html += '<div class="seat-number">Seat ' + (i + 1) + '</div>';
+
+    if (isEditing) {
+      html += '<select onclick="event.stopPropagation()" onchange="setSeatMember(' + i + ', this.value || null)" onblur="editingSeat=null;render()">';
+      html += '<option value="">-- Vacant --</option>';
+      for (const p of appData.people) {
+        const sel = p.id === personId ? ' selected' : '';
+        html += '<option value="' + p.id + '"' + sel + '>' + p.name + '</option>';
+      }
+      html += '</select>';
+    } else {
+      if (personId) {
+        html += '<div class="seat-name">' + escapeHtml(getPersonName(personId)) + '</div>';
+        const label = getSeatLabel(currentYear, i);
+        if (label) html += '<div class="seat-tenure">' + label + '</div>';
+      } else {
+        html += '<div class="seat-name vacant">Vacant</div>';
+      }
+    }
+
+    html += '</div>';
+  }
+
+  html += '</div></div>';
+
+  // Officers
+  html += '<div class="card">';
+  html += '<div class="card-header"><h2>Officers &mdash; ' + formatYear(currentYear) + '</h2></div>';
+  html += '<div id="officers-display">';
+
+  const officerLabels = {
+    president: 'President',
+    vicePresident: 'Vice Pres.',
+    secretary: 'Secretary',
+    treasurer: 'Treasurer',
+  };
+
+  for (const [key, label] of Object.entries(officerLabels)) {
+    const oid = roster.officers[key];
+    const name = oid ? getPersonName(oid) : null;
+    html += '<div class="officer-card">';
+    html += '<div class="officer-title">' + label + '</div>';
+    html += '<div class="officer-name' + (name ? '' : ' none') + '">' + (name ? escapeHtml(name) : 'Not set') + '</div>';
+    html += '</div>';
+  }
+
+  html += '</div></div>';
+
+  // Service summary
+  const summary = getServiceSummary();
+  if (summary.length > 0) {
+    html += '<div class="card">';
+    html += '<div class="card-header"><h2>Service History</h2></div>';
+    html += '<table id="service-table">';
+    html += '<thead><tr><th>Name</th><th>Total Yrs</th><th>Consec. Streak</th><th>Status</th></tr></thead>';
+    html += '<tbody>';
+
+    for (const s of summary) {
+      const statusClass = getStatusClass(s.currentStreak);
+      const statusLabel = getStatusLabel(s.currentStreak);
+      html += '<tr>';
+      html += '<td>' + escapeHtml(s.name) + '</td>';
+      html += '<td>' + s.totalYears + '</td>';
+      html += '<td>' + s.currentStreak + '</td>';
+      html += '<td><span class="service-badge ' + statusClass + '">' + statusLabel + '</span></td>';
+      html += '</tr>';
+    }
+
+    html += '</tbody></table></div>';
+  }
+
+  main.innerHTML = html;
+}
+
+function renderPeopleList() {
+  const list = document.getElementById('people-list');
+  if (appData.people.length === 0) {
+    list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px;font-size:0.85rem">No people added yet. Add members above.</div>';
+    return;
+  }
+
+  // Get service counts
+  const yearsArr = getYears();
+  const personYears = {};
+  if (yearsArr.length > 0) {
+    for (const year of yearsArr) {
+      const members = appData.roster[year].members || [];
+      for (const personId of members) {
+        if (!personId) continue;
+        if (!personYears[personId]) personYears[personId] = 0;
+        personYears[personId]++;
+      }
+    }
+  }
+
+  let html = '';
+  for (const p of appData.people) {
+    const yrs = personYears[p.id] || 0;
+    const isEditing = editingPersonId === p.id;
+
+    html += '<div class="person-row">';
+    html += '<div class="person-info">';
+
+    if (isEditing) {
+      html += '<input class="inline-edit-input" id="rename-input-' + p.id + '" value="' + escapeHtml(p.name) + '"';
+      html += ' onkeydown="if(event.key===\'Enter\')renamePerson(\'' + p.id + '\',this.value)"';
+      html += ' onblur="renamePerson(\'' + p.id + '\',this.value)" autofocus>';
+    } else {
+      html += '<span class="person-name">' + escapeHtml(p.name) + '</span>';
+      html += '<span class="person-yrs">' + yrs + ' yr' + (yrs !== 1 ? 's' : '') + '</span>';
+    }
+
+    html += '</div>';
+
+    if (!isEditing) {
+      html += '<div class="person-actions">';
+      html += '<button class="small" onclick="editingPersonId=\'' + p.id + '\';render();" title="Rename">Edit</button>';
+      html += '<button class="small danger" onclick="deletePerson(\'' + p.id + '\')" title="Remove person">Del</button>';
+      html += '</div>';
+    }
+
+    html += '</div>';
+  }
+
+  list.innerHTML = html;
+
+  // Focus the rename input if editing
+  if (editingPersonId) {
+    setTimeout(() => {
+      const inp = document.getElementById('rename-input-' + editingPersonId);
+      if (inp) { inp.focus(); inp.select(); }
+    }, 50);
+  }
+}
+
+function startEditingSeat(position) {
+  editingSeat = { position };
+  editingPersonId = null;
+  render();
+  // Auto-open select
+  setTimeout(() => {
+    const cells = document.querySelectorAll('#roster-grid-wrap .seat-cell');
+    const cell = cells[position];
+    if (cell) {
+      const sel = cell.querySelector('select');
+      if (sel) { sel.focus(); sel.click(); }
+    }
+  }, 50);
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ============================================================
+// INIT
+// ============================================================
+
+loadData();
+
+const years = getYears();
+if (years.length > 0) {
+  currentYear = years[years.length - 1];
+}
+
+render();
+
+// Close seat editor when clicking outside
+document.addEventListener('click', function(e) {
+  if (editingSeat !== null) {
+    const cell = e.target.closest('.seat-cell');
+    if (!cell) {
+      editingSeat = null;
+      editingPersonId = null;
+      render();
+    }
+  }
+  // Close person rename when clicking outside the row
+  if (editingPersonId !== null) {
+    const row = e.target.closest('.person-row');
+    if (!row) {
+      editingPersonId = null;
+      render();
+    }
+  }
+});
+</script>
+</body>
+</html>
