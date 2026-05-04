@@ -362,12 +362,46 @@ button.icon-only {
 }
 
 .officer-card {
+  position: relative;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 12px;
   text-align: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
+
+.officer-card:hover {
+  background: var(--accent-light);
+  border-color: var(--accent);
+}
+
+.officer-card.editing {
+  border-color: var(--accent);
+  background: var(--accent-light);
+  box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+.officer-card select {
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-family: inherit;
+  background: var(--card);
+  cursor: pointer;
+}
+
+.officer-card select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.officer-card.status-active { border-left: 4px solid var(--green); }
+.officer-card.status-limit { border-left: 4px solid var(--orange); }
+.officer-card.status-overlimit { border-left: 4px solid var(--danger); }
 
 .officer-card .officer-title {
   font-size: 0.65rem;
@@ -388,6 +422,19 @@ button.icon-only {
   color: var(--muted);
   font-weight: 400;
   font-style: italic;
+}
+
+.officer-card .officer-tenure {
+  font-size: 0.68rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.officer-card .officer-warning {
+  font-size: 0.62rem;
+  color: var(--danger);
+  margin-top: 2px;
+  font-weight: 600;
 }
 
 /* Service Summary */
@@ -632,6 +679,7 @@ let appData = { version: 1, cycleStart: null, people: [], roster: {} };
 let currentYear = null;
 let editingSeat = null; // { position: 0-8 } or null
 let editingPersonId = null; // person id being renamed inline
+let editingOfficer = null; // 'president', 'vicePresident', 'secretary', 'treasurer', or null
 
 // ============================================================
 // PERSISTENCE
@@ -670,7 +718,9 @@ function exportData() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'councilor-backup.json';
+  var d = new Date();
+  var ymd = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  a.download = 'councilor-export-' + ymd + '.json';
   a.click();
   URL.revokeObjectURL(url);
   toast('Data exported.');
@@ -811,6 +861,36 @@ function getSeatLabel(year, position) {
   return 'Yr ' + termYear + '/3';
 }
 
+function getOfficerConsecutive(year, office) {
+  var roster = appData.roster[year];
+  if (!roster) return { personId: null, consecutive: 0 };
+  var personId = roster.officers[office];
+  if (!personId) return { personId: null, consecutive: 0 };
+  var count = 1;
+  var y = year - 1;
+  while (appData.roster[y] && appData.roster[y].officers[office] === personId) {
+    count++;
+    y--;
+  }
+  return { personId: personId, consecutive: count };
+}
+
+function getOfficerStatus(year, office) {
+  var info = getOfficerConsecutive(year, office);
+  if (info.consecutive === 0) return 'vacant';
+  var maxTerms = office === 'treasurer' ? 6 : 2;
+  if (info.consecutive > maxTerms) return 'overlimit';
+  if (info.consecutive === maxTerms) return 'limit';
+  return 'active';
+}
+
+function getOfficerLabel(consecutive) {
+  if (consecutive === 0) return '';
+  var ord = consecutive % 100 >= 11 && consecutive % 100 <= 13 ? 'th' : (consecutive % 10 === 1 ? 'st' : consecutive % 10 === 2 ? 'nd' : consecutive % 10 === 3 ? 'rd' : 'th');
+  if (consecutive <= 1) return '1st yr';
+  return consecutive + ord + ' yr';
+}
+
 function getServiceSummary() {
   const yearsArr = getYears();
   if (yearsArr.length === 0) return [];
@@ -889,6 +969,7 @@ function goToYear(year) {
   if (!appData.roster[year]) return;
   editingSeat = null;
   editingPersonId = null;
+  editingOfficer = null;
   currentYear = year;
   render();
 }
@@ -956,6 +1037,7 @@ function deleteYear() {
   }
   editingSeat = null;
   editingPersonId = null;
+  editingOfficer = null;
   saveData();
   render();
 }
@@ -979,6 +1061,25 @@ function setSeatMember(position, personId) {
   }
 
   editingSeat = null;
+  saveData();
+  render();
+}
+
+function setOfficer(office, personId) {
+  if (currentYear === null) return;
+  if (!appData.roster[currentYear]) return;
+  appData.roster[currentYear].officers[office] = personId || null;
+
+  // One-office rule: if assigning, clear this person from other offices this year
+  if (personId) {
+    for (var o in appData.roster[currentYear].officers) {
+      if (o !== office && appData.roster[currentYear].officers[o] === personId) {
+        appData.roster[currentYear].officers[o] = null;
+      }
+    }
+  }
+
+  editingOfficer = null;
   saveData();
   render();
 }
@@ -1192,19 +1293,64 @@ function renderMainContent() {
   html += '<div class="card-header"><h2>Officers &mdash; ' + formatYear(currentYear) + '</h2></div>';
   html += '<div id="officers-display">';
 
-  const officerLabels = {
+  var officerLabels = {
     president: 'President',
     vicePresident: 'Vice Pres.',
     secretary: 'Secretary',
     treasurer: 'Treasurer',
   };
 
-  for (const [key, label] of Object.entries(officerLabels)) {
-    const oid = roster.officers[key];
-    const name = oid ? getPersonName(oid) : null;
-    html += '<div class="officer-card">';
+  for (var officeKey in officerLabels) {
+    var label = officerLabels[officeKey];
+    var info = getOfficerConsecutive(currentYear, officeKey);
+    var oid = info.personId;
+    var isEditing = editingOfficer === officeKey;
+    var status = getOfficerStatus(currentYear, officeKey);
+
+    html += '<div class="officer-card status-' + status + (isEditing ? ' editing' : '') + '"';
+    if (!isEditing) {
+      html += ' onclick="event.stopPropagation();editingOfficer=\'' + officeKey + '\';render();"';
+    }
+    html += '>';
     html += '<div class="officer-title">' + label + '</div>';
-    html += '<div class="officer-name' + (name ? '' : ' none') + '">' + (name ? escapeHtml(name) : 'Not set') + '</div>';
+
+    if (isEditing) {
+      html += '<select onclick="event.stopPropagation()" onchange="setOfficer(\'' + officeKey + '\', this.value || null)" onblur="editingOfficer=null;render()">';
+      html += '<option value="">-- Vacant --</option>';
+      if (officeKey === 'treasurer') {
+        // Treasurer can be anyone in the database
+        for (var pi = 0; pi < appData.people.length; pi++) {
+          var p = appData.people[pi];
+          var sel = p.id === oid ? ' selected' : '';
+          html += '<option value="' + p.id + '"' + sel + '>' + p.name + '</option>';
+        }
+      } else {
+        // President/VP/Secretary must be current council members
+        var councilMembers = roster.members.filter(function(id) { return id; });
+        for (var ci = 0; ci < councilMembers.length; ci++) {
+          var mid = councilMembers[ci];
+          var p = getPerson(mid);
+          if (p) {
+            var sel = mid === oid ? ' selected' : '';
+            html += '<option value="' + mid + '"' + sel + '>' + p.name + '</option>';
+          }
+        }
+      }
+      html += '</select>';
+    } else {
+      if (oid) {
+        html += '<div class="officer-name">' + escapeHtml(getPersonName(oid)) + '</div>';
+        var olbl = getOfficerLabel(info.consecutive);
+        if (olbl) html += '<div class="officer-tenure">' + olbl + '</div>';
+        // Warn if President/VP/Secretary is not on the current council
+        if (officeKey !== 'treasurer' && !roster.members.includes(oid)) {
+          html += '<div class="officer-warning">Not on council</div>';
+        }
+      } else {
+        html += '<div class="officer-name none">Not set</div>';
+      }
+    }
+
     html += '</div>';
   }
 
@@ -1301,6 +1447,7 @@ function renderPeopleList() {
 function startEditingSeat(position) {
   editingSeat = { position };
   editingPersonId = null;
+  editingOfficer = null;
   render();
   // Auto-open select
   setTimeout(() => {
@@ -1351,6 +1498,14 @@ document.addEventListener('click', function(e) {
     const row = e.target.closest('.person-row');
     if (!row) {
       editingPersonId = null;
+      render();
+    }
+  }
+  // Close officer editor when clicking outside the card
+  if (editingOfficer !== null) {
+    const card = e.target.closest('.officer-card');
+    if (!card) {
+      editingOfficer = null;
       render();
     }
   }
