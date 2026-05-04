@@ -476,6 +476,7 @@ button.icon-only {
 .service-badge.warning { background: var(--yellow-bg); color: #b7791f; }
 .service-badge.limit { background: var(--orange-bg); color: #c05621; }
 .service-badge.overlimit { background: var(--danger-bg); color: var(--danger); }
+.service-badge.dimmed { opacity: 0.45; }
 
 /* People Manager */
 #people-list {
@@ -650,10 +651,10 @@ button.icon-only {
 
   <div class="card" style="margin-top:16px">
     <div class="card-header">
-      <h2>People Database</h2>
+      <h2>People</h2>
     </div>
     <div id="add-person-form">
-      <input type="text" id="new-person-name" placeholder="Full name..." maxlength="80">
+      <input type="text" id="new-person-name" placeholder="Full name..." maxlength="80" onkeydown="if(event.key==='Enter')addPerson()">
       <button class="primary" onclick="addPerson()">Add Person</button>
     </div>
     <div id="people-list"></div>
@@ -947,16 +948,20 @@ function getServiceSummary() {
   return result;
 }
 
-function getStatusClass(consecutive) {
+function getStatusClass(consecutive, serving) {
+  if (!serving && consecutive >= 7) return 'overlimit dimmed';
+  if (!serving) return 'active dimmed';
   if (consecutive >= 7) return 'overlimit';
   if (consecutive >= 6) return 'limit';
   if (consecutive >= 4) return 'warning';
   return 'active';
 }
 
-function getStatusLabel(consecutive) {
+function getStatusLabel(consecutive, serving) {
+  if (!serving && consecutive >= 7) return 'Over limit';
+  if (!serving) return 'Available';
   if (consecutive >= 7) return 'Over limit';
-  if (consecutive >= 6) return 'Term limit';
+  if (consecutive >= 6) return 'Final year';
   if (consecutive >= 4) return '2nd term';
   return 'Active';
 }
@@ -1366,9 +1371,10 @@ function renderMainContent() {
     html += '<tbody>';
 
     for (const s of summary) {
-      const statusConsecutive = s.currentStreak > 0 ? s.currentStreak : s.maxStreak;
-      const statusClass = getStatusClass(statusConsecutive);
-      const statusLabel = getStatusLabel(statusConsecutive);
+      var serving = s.currentStreak > 0;
+      var statusConsecutive = serving ? s.currentStreak : s.maxStreak;
+      var statusClass = getStatusClass(statusConsecutive, serving);
+      var statusLabel = getStatusLabel(statusConsecutive, serving);
       html += '<tr>';
       html += '<td>' + escapeHtml(s.name) + '</td>';
       html += '<td>' + s.totalYears + '</td>';
