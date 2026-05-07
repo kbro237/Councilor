@@ -42,6 +42,7 @@ Open `index.html` directly in a browser — no build, no server, no dependencies
   ```
   Co-authored-by: opencode (deepseek-v4-pro) <opencode@anomalyco.com>
   ```
+- Commits and pushes to `main` don't need explicit approval — go ahead after changes.
 
 ## Testing
 - No test suite. Open `index.html` in a browser and exercise the UI.
