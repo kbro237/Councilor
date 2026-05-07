@@ -643,6 +643,8 @@ button.icon-only {
       <button onclick="exportData()" title="Download backup">Export JSON</button>
       <button onclick="document.getElementById('import-file').click()" title="Restore from backup">Import JSON</button>
       <button onclick="printRoster()" title="Print current year">Print</button>
+      <button onclick="copyMarkdown()" title="Copy markdown to clipboard">Copy MD</button>
+      <button onclick="downloadMarkdown()" title="Download markdown file">Download MD</button>
     </div>
   </header>
 
@@ -1207,6 +1209,68 @@ function printRoster() {
   if (!w) { toast('Pop-up blocked. Allow pop-ups for this site.', true); return; }
   w.document.write(html);
   w.document.close();
+}
+
+function getMarkdownContent() {
+  if (currentYear === null) return '';
+  var roster = appData.roster[currentYear];
+  if (!roster) return '';
+  var cycleStart = getCycleStart();
+
+  var officerLabels = {
+    president: 'President',
+    vicePresident: 'Vice Pres.',
+    secretary: 'Secretary',
+    treasurer: 'Treasurer',
+  };
+
+  var md = '# Church Council Roster \u2014 ' + formatYear(currentYear) + '\n\n';
+  md += '**Term:** ' + formatYearLong(currentYear) + '\n\n';
+  md += '**Cohorts:** Seats 1\u20133 start ' + cycleStart + ', 4\u20136 start ' + (cycleStart + 1) + ', 7\u20139 start ' + (cycleStart + 2) + '\n\n';
+  md += '## Council Seats\n\n';
+  md += '| # | Name | Tenure |\n';
+  md += '|---|------|--------|\n';
+  for (var i = 0; i < TOTAL_SEATS; i++) {
+    var personId = roster.members[i];
+    var name = personId ? getPersonName(personId) : '\u2014 Vacant \u2014';
+    var label = personId ? getSeatLabel(currentYear, i) : '';
+    md += '| ' + (i + 1) + ' | ' + name + ' | ' + label + ' |\n';
+  }
+  md += '\n## Officers\n\n';
+  md += '| Office | Name | Tenure |\n';
+  md += '|--------|------|--------|\n';
+  for (var _i = 0, _a = Object.entries(officerLabels); _i < _a.length; _i++) {
+    var _b = _a[_i], officeKey = _b[0], label = _b[1];
+    var info = getOfficerConsecutive(currentYear, officeKey);
+    var name = info.personId ? getPersonName(info.personId) : '\u2014 Not set \u2014';
+    var tenureLabel = info.consecutive > 0 ? getOfficerLabel(info.consecutive) : '';
+    md += '| ' + label + ' | ' + name + ' | ' + tenureLabel + ' |\n';
+  }
+  return md;
+}
+
+function copyMarkdown() {
+  var md = getMarkdownContent();
+  if (!md) { toast('No year selected.', true); return; }
+  if (!navigator.clipboard) { toast('Clipboard not supported.', true); return; }
+  navigator.clipboard.writeText(md).then(function() {
+    toast('Markdown copied to clipboard.');
+  }).catch(function() {
+    toast('Failed to copy.', true);
+  });
+}
+
+function downloadMarkdown() {
+  var md = getMarkdownContent();
+  if (!md) { toast('No year selected.', true); return; }
+  var blob = new Blob([md], { type: 'text/markdown' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'council-roster-' + currentYear + '-' + (currentYear + 1) + '.md';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Markdown file downloaded.');
 }
 
 // ============================================================
