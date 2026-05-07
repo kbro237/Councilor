@@ -642,6 +642,7 @@ button.icon-only {
     <div class="header-buttons">
       <button onclick="exportData()" title="Download backup">Export JSON</button>
       <button onclick="document.getElementById('import-file').click()" title="Restore from backup">Import JSON</button>
+      <button onclick="printRoster()" title="Print current year">Print</button>
     </div>
   </header>
 
@@ -1144,6 +1145,68 @@ function deletePerson(id) {
   saveData();
   render();
   toast('Removed ' + person.name + '.');
+}
+
+function printRoster() {
+  if (currentYear === null) return;
+  var roster = appData.roster[currentYear];
+  if (!roster) return;
+
+  var cycleStart = getCycleStart();
+  var officerLabels = {
+    president: 'President',
+    vicePresident: 'Vice Pres.',
+    secretary: 'Secretary',
+    treasurer: 'Treasurer',
+  };
+
+  var seatsHtml = '';
+  for (var i = 0; i < TOTAL_SEATS; i++) {
+    var personId = roster.members[i];
+    var name = personId ? escapeHtml(getPersonName(personId)) : '<span class="vacant">Vacant</span>';
+    var label = personId ? getSeatLabel(currentYear, i) : '';
+    seatsHtml += '<tr><td>' + (i + 1) + '</td><td>' + name + '</td><td>' + label + '</td></tr>';
+  }
+
+  var officersHtml = '';
+  for (var _i = 0, _a = Object.entries(officerLabels); _i < _a.length; _i++) {
+    var _b = _a[_i], officeKey = _b[0], label = _b[1];
+    var info = getOfficerConsecutive(currentYear, officeKey);
+    var name = info.personId ? escapeHtml(getPersonName(info.personId)) : '<span class="vacant">Not set</span>';
+    var tenureLabel = info.consecutive > 0 ? getOfficerLabel(info.consecutive) : '';
+    officersHtml += '<tr><td>' + label + '</td><td>' + name + '</td><td>' + tenureLabel + '</td></tr>';
+  }
+
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Church Council Roster</title><style>'
+    + '@page{margin:15mm;}'
+    + 'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#000;line-height:1.4;}'
+    + 'h1{font-size:1.3rem;margin:0 0 2px;}'
+    + '.year{font-size:0.9rem;color:#555;margin-bottom:2px;}'
+    + '.cohorts{font-size:0.75rem;color:#777;margin-bottom:16px;}'
+    + 'h2{font-size:0.95rem;margin:16px 0 6px;border-bottom:1px solid #ccc;padding-bottom:4px;}'
+    + 'table{width:100%;border-collapse:collapse;margin-bottom:12px;}'
+    + 'th{text-align:left;padding:4px 8px;border-bottom:2px solid #333;font-size:0.8rem;font-weight:600;}'
+    + 'td{padding:4px 8px;border-bottom:1px solid #ddd;font-size:0.85rem;}'
+    + '.vacant{color:#999;font-style:italic;}'
+    + '</style></head><body>'
+    + '<h1>Church Council Roster</h1>'
+    + '<div class="year">' + formatYear(currentYear) + ' &nbsp;(' + formatYearLong(currentYear) + ')</div>'
+    + '<div class="cohorts">Cohorts: Seats 1\u20133 start ' + cycleStart + ', 4\u20136 start ' + (cycleStart + 1) + ', 7\u20139 start ' + (cycleStart + 2) + '</div>'
+    + '<h2>Council Seats</h2>'
+    + '<table><thead><tr><th>#</th><th>Name</th><th>Tenure</th></tr></thead><tbody>'
+    + seatsHtml
+    + '</tbody></table>'
+    + '<h2>Officers</h2>'
+    + '<table><thead><tr><th>Office</th><th>Name</th><th>Tenure</th></tr></thead><tbody>'
+    + officersHtml
+    + '</tbody></table>'
+    + '<script>window.onload=function(){window.print();};window.onafterprint=function(){window.close();};<\/script>'
+    + '</body></html>';
+
+  var w = window.open('', '_blank', 'width=700,height=600');
+  if (!w) { toast('Pop-up blocked. Allow pop-ups for this site.', true); return; }
+  w.document.write(html);
+  w.document.close();
 }
 
 // ============================================================
